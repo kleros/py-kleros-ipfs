@@ -16,9 +16,9 @@ from kubo_datatypes import PinType
 from kubo_rpc_api import KuboRPC
 from filebase_pin_api import FilebasePinAPI
 
-RPC = KuboRPC(log_filepath="backup_filebase_locally.log",
+RPC = KuboRPC(log_filepath="logs/backup_filebase_locally.log",
               log_level=logging.DEBUG)
-FILEBASE_API = FilebasePinAPI(log_filepath="backup_filebase_locally.log",
+FILEBASE_API = FilebasePinAPI(log_filepath="logs/backup_filebase_locally.log",
                               log_level=logging.DEBUG)
 BUCKETS: List[str] = [
     'kleros',

@@ -34,7 +34,7 @@ def main() -> None:
     Returns:
         None
     """
-    filebase_api = FilebasePinAPI(log_filepath="get_filebase_cids.log")
+    filebase_api = FilebasePinAPI(log_filepath="logs/get_filebase_cids.log")
     for bucket in BUCKETS:
         cids = filebase_api.get_all_cids(bucket)
         print(f"{bucket} has {len(cids)} CIDs")

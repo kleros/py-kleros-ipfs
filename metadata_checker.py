@@ -9,6 +9,6 @@ from filebase_pin_api import FilebasePinAPI
 
 load_dotenv()
 
-filebase_api = FilebasePinAPI('metadata_checker.log')
+filebase_api = FilebasePinAPI('logs/metadata_checker.log')
 print(filebase_api.get_file(
     'kleros', 'QmVq2GstdkVQDNQFZMLGLFpVxwHR2abYyYgFZwh8GtkkWi'))
