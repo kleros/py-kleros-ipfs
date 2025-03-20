@@ -92,13 +92,14 @@ def get_missing_cids(local_filepath: str, filebase_filepath: str) -> set[str]:
     local_cids: List[str] = get_local_node_pins(filepath=local_filepath)
     filebase_cids: List[str] = get_filebase_pins(filepath=filebase_filepath)
     logger.info(
-        f"The local pinset has {len(local_cids)} cids, we have found {len(filebase_cids)} in filebase.")
+        "The local pinset has %d cids, we have found %d in filebase.",
+        len(local_cids), len(filebase_cids))
     missing_cids: set[str] = set(filebase_cids) - set(local_cids)
     filebase_missing_cids = set(local_cids) - set(filebase_cids)
     logger.info(
-        f"There are {len(missing_cids)} missing CIDs in the local node")
+        "There are %d missing CIDs in the local node", len(missing_cids))
     logger.info(
-        f"Filebase is missing {len(filebase_missing_cids)} CIDs.")
+        "Filebase is missing %d CIDs.", len(filebase_missing_cids))
     if len(filebase_missing_cids) > 0:
         print(f"Missing CIDs in filebase: {filebase_missing_cids}")
     return missing_cids
@@ -128,13 +129,13 @@ if __name__ == "__main__":
     # Add missed CIDs into local IPFS node
     n_missed_cids = len(missed_cids)
     for index, missed_cid in enumerate(missed_cids):
-        logger.info(f"Progress: {index/n_missed_cids*100:.2f} %")
+        logger.info("Progress: %.2f%%", index/n_missed_cids*100)
         try:
             RPC.pin_add(cid=missed_cid, timeout=2)
-            logger.info(f"{missed_cid} added to local ipfs node")
+            logger.info("%s added to local ipfs node", missed_cid)
         except ReadTimeout:
-            logger.info("Error while trying to pin, timeout error, most probably we don't have as peer filebase nodes. ",
-                        f"CID {missed_cid} will be skipped")
+            logger.info("Error while trying to pin, timeout error, most probably we don't have as peer filebase nodes. "
+                        "CID %s will be skipped", missed_cid)
         except Exception as e:
-            logger.info(f"Unknown exception for cid {missed_cid}")
-            logger.info(e)
+            logger.info("Unknown exception for cid %s", missed_cid)
+            logger.info("%s", e)
