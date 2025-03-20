@@ -15,11 +15,14 @@ from filebase_datatypes import PinSetType
 from kubo_datatypes import PinType
 from kubo_rpc_api import KuboRPC
 from filebase_pin_api import FilebasePinAPI
+from logger import setup_logger
 
-RPC = KuboRPC(log_filepath="logs/backup_filebase_locally.log",
+LOG_LOCATION: str = 'logs/backup_filebase_locally.log'
+RPC = KuboRPC(log_filepath=LOG_LOCATION,
               log_level=logging.DEBUG)
-FILEBASE_API = FilebasePinAPI(log_filepath="logs/backup_filebase_locally.log",
+FILEBASE_API = FilebasePinAPI(log_filepath=LOG_LOCATION,
                               log_level=logging.DEBUG)
+logger: logging.Logger = setup_logger(LOG_LOCATION, level=logging.DEBUG)
 BUCKETS: List[str] = [
     'kleros',
     'kleros-v2',
@@ -87,12 +90,13 @@ def get_missing_cids(local_filepath: str, filebase_filepath: str) -> set[str]:
     """
     local_cids: List[str] = get_local_node_pins(filepath=local_filepath)
     filebase_cids: List[str] = get_filebase_pins(filepath=filebase_filepath)
-    print(
+    logger.info(
         f"The local pinset has {len(local_cids)} cids, we have found {len(filebase_cids)} in filebase.")
     missing_cids: set[str] = set(filebase_cids) - set(local_cids)
     filebase_missing_cids = set(local_cids) - set(filebase_cids)
-    print(f"There are {len(missing_cids)} missing CIDs in the local node")
-    print(
+    logger.info(
+        f"There are {len(missing_cids)} missing CIDs in the local node")
+    logger.info(
         f"Filebase is missing {len(filebase_missing_cids)} CIDs.")
     if len(filebase_missing_cids) > 0:
         print(f"Missing CIDs in filebase: {filebase_missing_cids}")
@@ -103,33 +107,33 @@ if __name__ == "__main__":
     local_node_pin_filepath: str = './local_node_pins.json'
     filebase_pins_filepath: str = './filebase_pins.json'
 
-    print("Updating local node pin ls")
+    logger.info("Updating local node pin ls")
     # recursive pins is enough to get all the pins
     RPC.pin_ls(filepath=local_node_pin_filepath,
                pin_type=PinType.RECURSIVE)
 
     # update Filebase pinset
-    print("Updating Filebase pin ls")
+    logger.info("Updating Filebase pin ls")
     for bucket in BUCKETS:
         # there is no need to get the output, we are going to read from the
         # filepath stored in the filepath
         FILEBASE_API.get_all_cids(
             bucket_name=bucket, filepath=filebase_pins_filepath)
 
-    print("Checking Missing CIDs")
+    logger.info("Checking Missing CIDs")
     missed_cids: set[str] = get_missing_cids(local_filepath=local_node_pin_filepath,
                                              filebase_filepath=filebase_pins_filepath)
 
     # Add missed CIDs into local IPFS node
     n_missed_cids = len(missed_cids)
     for index, missed_cid in enumerate(missed_cids):
-        print(f"Progress: {index/n_missed_cids*100:.2f} %")
+        logger.info(f"Progress: {index/n_missed_cids*100:.2f} %")
         try:
             RPC.pin_add(cid=missed_cid, timeout=2)
-            print(f"{missed_cid} added to local ipfs node")
+            logger.info(f"{missed_cid} added to local ipfs node")
         except ReadTimeout:
-            print("Error while trying to pin, timeout error, most probably we don't have as peer filebase nodes. ",
-                  f"CID {missed_cid} will be skipped")
+            logger.info("Error while trying to pin, timeout error, most probably we don't have as peer filebase nodes. ",
+                        f"CID {missed_cid} will be skipped")
         except Exception as e:
-            print(f"Unknown exception for cid {missed_cid}")
-            print(e)
+            logger.info(f"Unknown exception for cid {missed_cid}")
+            logger.info(e)
