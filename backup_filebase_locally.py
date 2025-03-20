@@ -22,7 +22,8 @@ RPC = KuboRPC(log_filepath=LOG_LOCATION,
               log_level=logging.DEBUG)
 FILEBASE_API = FilebasePinAPI(log_filepath=LOG_LOCATION,
                               log_level=logging.DEBUG)
-logger: logging.Logger = setup_logger(LOG_LOCATION, level=logging.DEBUG)
+logger: logging.Logger = setup_logger(
+    name="backup-filebase-locally", log_file=LOG_LOCATION, level=logging.DEBUG)
 BUCKETS: List[str] = [
     'kleros',
     'kleros-v2',
