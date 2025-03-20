@@ -43,9 +43,9 @@ def main(filepath, bucket_name="kleros"):
         The first 10 CIDs from the list.
         The number of CIDs in Kleros IPFS, in Filebase, and the number of missed CIDs in Filebase.
     """
-    kubo_rpc = KuboRPC(log_filepath='update_filebase_with_local.log')
+    kubo_rpc = KuboRPC(log_filepath='logs/update_filebase_with_local.log')
     filebase_api = FilebasePinAPI(
-        log_filepath='update_filebase_with_local.log')
+        log_filepath='logs/update_filebase_with_local.log')
     bucket_name = 'kleros'
     cids: List[str] = kubo_rpc.read_pin_ls_output(filepath)
     print(cids[0:10])
