@@ -98,10 +98,8 @@ def get_missing_cids(local_filepath: str, filebase_filepath: str) -> set[str]:
     filebase_missing_cids = set(local_cids) - set(filebase_cids)
     logger.info(
         "There are %d missing CIDs in the local node", len(missing_cids))
-    logger.info(
-        "Filebase is missing %d CIDs.", len(filebase_missing_cids))
     if len(filebase_missing_cids) > 0:
-        print(f"Missing CIDs in filebase: {filebase_missing_cids}")
+        logger.warning("Missing CIDs in filebase: %d", filebase_missing_cids)
     return missing_cids
 
 
@@ -109,6 +107,7 @@ if __name__ == "__main__":
     local_node_pin_filepath: str = './local_node_pins.json'
     filebase_pins_filepath: str = './filebase_pins.json'
 
+    logger.info("Backup started ----------------")
     logger.info("Updating local node pin ls")
     # recursive pins is enough to get all the pins
     RPC.pin_ls(filepath=local_node_pin_filepath,
@@ -139,3 +138,5 @@ if __name__ == "__main__":
         except Exception as e:
             logger.info("Unknown exception for cid %s", missed_cid)
             logger.info("%s", e)
+    logger.info("All missed CIDs were processed")
+    logger.info("Backup finished ----------------")
