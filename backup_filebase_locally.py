@@ -100,7 +100,9 @@ def get_missing_cids(local_filepath: str, filebase_filepath: str) -> set[str]:
     logger.info(
         "There are %d missing CIDs in the local node", len(missing_cids))
     if len(filebase_missing_cids) > 0:
-        logger.warning("Missing CIDs in filebase: %d", filebase_missing_cids)
+        logger.error("Missing CIDs in filebase: %d", len(filebase_missing_cids))
+        for cid in filebase_missing_cids:
+            logger.error("Filebase is missing CID: %s", cid)
     return missing_cids
 
 
