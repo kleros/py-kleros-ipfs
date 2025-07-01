@@ -34,7 +34,8 @@ BUCKETS: List[str] = [
     'reality-v2',
     'kleros-token-list',
     'v2-logs',
-    'atlas-logs'
+    'atlas-logs',
+    'kleros-scout'
 ]
 
 
