@@ -22,7 +22,7 @@ class KuboRPC():
     def __init__(
             self,
             api_url: str = "http://127.0.0.1:5001/api/v0",
-            log_filepath: str = "filebasePinAPI.log",
+            log_filepath: str = "/var/log/py-kleros-ipfs/filebasePinAPI.log",
             log_level: int = logging.INFO
     ) -> None:
         self.api_url: str = api_url

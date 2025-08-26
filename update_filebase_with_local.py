@@ -7,6 +7,8 @@ import sys
 import random
 from typing import List
 
+import os
+from dotenv import load_dotenv
 from filebase_datatypes import GetPinsResponse
 from filebase_pin_api import PinStatus, FilebasePinAPI
 from kubo_rpc_api import KuboRPC
@@ -43,9 +45,13 @@ def main(filepath, bucket_name="kleros"):
         The first 10 CIDs from the list.
         The number of CIDs in Kleros IPFS, in Filebase, and the number of missed CIDs in Filebase.
     """
-    kubo_rpc = KuboRPC(log_filepath='logs/update_filebase_with_local.log')
-    filebase_api = FilebasePinAPI(
-        log_filepath='logs/update_filebase_with_local.log')
+    # Load log filepath from environment (.env)
+    load_dotenv()
+    log_path: str = os.getenv('LOG_FILEPATH', '/var/log/py-kleros-ipfs')
+    log_filepath: str = os.path.join(log_path, 'update_filebase_with_local.log')
+
+    kubo_rpc = KuboRPC(log_filepath=log_filepath)
+    filebase_api = FilebasePinAPI(log_filepath=log_filepath)
     bucket_name = 'kleros'
     cids: List[str] = kubo_rpc.read_pin_ls_output(filepath)
     print(cids[0:10])

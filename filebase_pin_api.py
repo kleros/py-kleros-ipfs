@@ -48,12 +48,12 @@ class FilebasePinAPI():
     https://docs.filebase.com/api-documentation/ipfs-pinning-service-api
     """
 
-    def __init__(self, log_filepath: str = "filebasePinAPI.log", log_level: int = logging.INFO) -> None:
+    def __init__(self, log_filepath: str = "/var/log/py-kleros-ipfs/filebasePinAPI.log", log_level: int = logging.INFO) -> None:
         """
         Initialize the FilebasePinAPI class.
 
         Args:
-            log_filepath (str, optional): Path to the log file. Defaults to "filebasePinAPI.log".
+            log_filepath (str, optional): Path to the log file. Defaults to "/var/log/py-kleros-ipfs/filebasePinAPI.log".
             log_level (int, optional): Log level for the self.logger. Defaults to logging.INFO.
         """
         self.logger: logging.Logger = setup_logger(
