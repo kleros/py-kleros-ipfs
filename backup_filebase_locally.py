@@ -6,6 +6,7 @@ This script should be executed periodically to keep a backup node with all the f
 that were pinned in filebase.
 """
 import os
+from dotenv import load_dotenv
 from typing import Dict, List
 import logging
 

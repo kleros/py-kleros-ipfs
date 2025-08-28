@@ -5,6 +5,7 @@ Iterate over a list of bucket to get the full list of CIDs in each bucket
 """
 
 from typing import List
+from dotenv import load_dotenv
 
 from filebase_pin_api import FilebasePinAPI
 
