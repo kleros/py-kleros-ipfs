@@ -6,6 +6,7 @@ This script should be executed periodically to keep a backup node with all the f
 that were pinned in filebase.
 """
 import os
+from dotenv import load_dotenv
 from typing import Dict, List
 import logging
 
@@ -17,13 +18,17 @@ from kubo_rpc_api import KuboRPC
 from filebase_pin_api import FilebasePinAPI
 from logger import setup_logger
 
-LOG_LOCATION: str = 'logs/backup_filebase_locally.log'
-RPC = KuboRPC(log_filepath=LOG_LOCATION,
+load_dotenv()
+log_path: str = os.getenv('LOG_FILEPATH', '/var/log/py-kleros-ipfs')
+log_filepath: str = os.path.join(log_path, 'backup_filebase_locally.log')
+
+
+RPC = KuboRPC(log_filepath=log_filepath,
               log_level=logging.DEBUG)
-FILEBASE_API = FilebasePinAPI(log_filepath=LOG_LOCATION,
+FILEBASE_API = FilebasePinAPI(log_filepath=log_filepath,
                               log_level=logging.DEBUG)
 logger: logging.Logger = setup_logger(
-    name="backup-filebase-locally", log_file=LOG_LOCATION, level=logging.DEBUG)
+    name="backup-filebase-locally", log_file=log_filepath, level=logging.DEBUG)
 BUCKETS: List[str] = [
     'kleros',
     'kleros-v2',

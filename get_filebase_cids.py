@@ -5,6 +5,7 @@ Iterate over a list of bucket to get the full list of CIDs in each bucket
 """
 
 from typing import List
+from dotenv import load_dotenv
 
 from filebase_pin_api import FilebasePinAPI
 
@@ -34,7 +35,11 @@ def main() -> None:
     Returns:
         None
     """
-    filebase_api = FilebasePinAPI(log_filepath="logs/get_filebase_cids.log")
+    load_dotenv()
+    log_path: str = os.getenv('LOG_FILEPATH', '/var/log/py-kleros-ipfs')
+    log_filepath: str = os.path.join(log_path, 'get_filebase_cids.log')
+    
+    filebase_api = FilebasePinAPI(log_filepath=log_filepath)
     for bucket in BUCKETS:
         cids = filebase_api.get_all_cids(bucket)
         print(f"{bucket} has {len(cids)} CIDs")
