@@ -4,6 +4,7 @@ Script to delete PoH user data (profile picture and video) from Filebase using t
 import os
 from logging import Logger
 import sys
+from typing import Tuple
 import requests
 from filebase_datatypes import GetPinsResponse
 from filebase_pin_api import FilebasePinAPI
@@ -34,7 +35,7 @@ def get_profile_media(profile_id: str) -> tuple[None, None] | tuple[str, str]:
             evidence(orderBy: creationTime, first: 1) {
                 URI
                 id
-            }   
+            }
           }
         }
         }
@@ -103,9 +104,24 @@ def get_data_from_registration(registration_uri: str) -> dict | None:
         return None
 
 
-def main(profile_id: str) -> None:
+def main(profile_id: str) -> Tuple[str | None, str | None]:
+    """
+     Main entry point for the script. Validates the Ethereum address format,
+     fetches media CIDs for the given profile ID, and deletes the corresponding
+     files from Filebase.
 
-    # Validate Ethereum address format
+     Parameters
+     ----------
+     profile_id : str
+         The Ethereum address of the user profile to delete media from.
+
+     Returns
+     -------
+     Tuple[str, str] | Tuple[None, None]
+         A tuple containing the CIDs of the deleted photo and video files.
+         If no media files are found, returns (None, None).
+     """
+
     if not profile_id.startswith('0x') or len(profile_id) != 42:
         logger.error("Invalid Ethereum address format")
         sys.exit(1)
@@ -117,9 +133,10 @@ def main(profile_id: str) -> None:
     if not photo_cid and not video_cid:
         logger.info("No media files found for this profile")
         sys.exit(1)
-    logger.info(f"Found media CIDs - Photo: {photo_cid}, Video: {video_cid}")
+    logger.info(
+        f"Found media CIDs - Photo: {photo_cid}, Video: {video_cid}")
     # Delete files from Filebase
-    api = FilebasePinAPI(LOG_FILEPATH)
+    api = FilebasePinAPI(log_filepath)
     bucket_names = ["kleros", "poh-v2"]
 
     for bucket_name in bucket_names:
@@ -156,6 +173,7 @@ def main(profile_id: str) -> None:
 
         else:
             logger.warning("Video CID not found in Filebase")
+    return (photo_cid, video_cid)
 
 
 def get_cid_from_uri(uri: str) -> str:
@@ -175,4 +193,6 @@ if __name__ == "__main__":
     # Get profile ID from user
     profile: str = input(
         "Enter the PoH profile ID (Ethereum address): ").strip()
-    main(profile)
+    photo_cid, video_cid = main(profile)
+    # Send to STDOUT to be used by ansible or other scripts
+    print(photo_cid, video_cid)
