@@ -1,6 +1,7 @@
 """
 Script to delete PoH user data (profile picture and video) from Filebase using their profile ID.
 """
+import os
 from logging import Logger
 import sys
 import requests
@@ -10,8 +11,11 @@ from logger import setup_logger
 
 # GraphQL endpoint for PoH subgraph
 POH_SUBGRAPH_URL = "https://api.studio.thegraph.com/query/61738/proof-of-humanity-mainnet/version/latest"
-LOG_FILEPATH = "logs/delete_poh_user_data.log"
-logger: Logger = setup_logger(LOG_FILEPATH)
+log_path: str = os.getenv('LOG_FILEPATH', '/var/log/py-kleros-ipfs')
+log_filepath: str = os.path.join(log_path, 'delete_poh_user_data.log')
+
+
+logger: Logger = setup_logger(log_filepath)
 
 
 def get_profile_media(profile_id: str) -> tuple[None, None] | tuple[str, str]:
