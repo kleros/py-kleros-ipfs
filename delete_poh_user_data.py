@@ -116,40 +116,42 @@ def main(profile_id: str) -> None:
     logger.info(f"Found media CIDs - Photo: {photo_cid}, Video: {video_cid}")
     # Delete files from Filebase
     api = FilebasePinAPI(LOG_FILEPATH)
-    bucket_name = "kleros"
+    bucket_names = ["kleros", "poh-v2"]
 
-    if photo_cid:
-        photo_info: GetPinsResponse = api.get_file(
-            bucket_name, get_cid_from_uri(photo_cid))
-        if photo_info:
-            logger.info(f"Deleting photo with CID: {photo_cid}")
-            request_id: str = photo_info['results'][0]['requestid']
-            res: requests.Response = api.delete_pin(
-                bucket_name, request_id)
-            logger.info(
-                f"Photo deletion {'successful' if res.ok else 'failed'}")
+    for bucket_name in bucket_names:
+        logger.info(f"Processing bucket: {bucket_name}")
+        if photo_cid:
+            photo_info: GetPinsResponse = api.get_file(
+                bucket_name, get_cid_from_uri(photo_cid))
+            if photo_info:
+                logger.info(f"Deleting photo with CID: {photo_cid}")
+                request_id: str = photo_info['results'][0]['requestid']
+                res: requests.Response = api.delete_pin(
+                    bucket_name, request_id)
+                logger.info(
+                    f"Photo deletion {'successful' if res.ok else 'failed'}")
+            else:
+                logger.warning("Photo CID not found in Filebase")
+
         else:
             logger.warning("Photo CID not found in Filebase")
 
-    else:
-        logger.warning("Photo CID not found in Filebase")
+        if video_cid:
+            video_info: GetPinsResponse = api.get_file(
+                bucket_name, get_cid_from_uri(video_cid))
+            if video_info:
+                logger.info(f"Deleting video with CID: {video_cid}")
+                request_id: str = video_info['results'][0]['requestid']
 
-    if video_cid:
-        video_info: GetPinsResponse = api.get_file(
-            bucket_name, get_cid_from_uri(video_cid))
-        if video_info:
-            logger.info(f"Deleting video with CID: {video_cid}")
-            request_id: str = video_info['results'][0]['requestid']
+                res: requests.Response = api.delete_pin(
+                    bucket_name, request_id)
+                logger.info(
+                    f"Video deletion {'successful' if res.ok else 'failed'}")
+            else:
+                logger.warning("Video CID not found in Filebase")
 
-            res: requests.Response = api.delete_pin(
-                bucket_name, request_id)
-            logger.info(
-                f"Video deletion {'successful' if res.ok else 'failed'}")
         else:
             logger.warning("Video CID not found in Filebase")
-
-    else:
-        logger.warning("Video CID not found in Filebase")
 
 
 def get_cid_from_uri(uri: str) -> str:
