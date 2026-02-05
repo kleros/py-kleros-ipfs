@@ -87,7 +87,8 @@ class FilebasePinAPI():
         """
         try:
             # Try the current configured format
-            return datetime.strptime(date_str, DATE_STR_FORMAT_API).astimezone(timezone.utc)
+            # Since DATE_STR_FORMAT_API ends in Z, we know it's UTC.
+            return datetime.strptime(date_str, DATE_STR_FORMAT_API).replace(tzinfo=timezone.utc)
         except ValueError:
             pass
 
@@ -194,6 +195,12 @@ class FilebasePinAPI():
                 after=after,
                 limit=limit
             )
+            # All the results were already read for this key (after/before)
+            if len(temp["results"]) == 0:
+                keep_looping = False
+                # there is nothing to do
+                break
+
             result_count = temp["count"]
             if old_result_count == 0:
                 # Assigning result_count left + amount of data received
@@ -218,21 +225,19 @@ class FilebasePinAPI():
             )
 
             # Check logic to stop the loop
-            if len(temp["results"]) == 0:
-                keep_looping = False
-                # there is nothing to do
-                break
             if result_count <= limit:
                 keep_looping = False
                 self.logger.info(
                     "Result count is less than the limit or the response is empty."
                     " Breaking the loop, we got all the CIDs")
 
-            # update the date to after/before with the date in the new items
-            if after_before_key == "after":
-                after = pin_set["last_date"]
-            else:
-                before = pin_set["first_date"]
+            # Get min date from the current batch to update 'before' regardless of direction
+            # Because API is descending (Newest -> Oldest), we always page by moving 'before' back.
+            # after keeps the same value as originally planned.
+            dates_str = [item["created"] for item in temp["results"]]
+            min_date_str = min(dates_str)
+            before = FilebasePinAPI.parse_api_date(min_date_str)
+            
             FilebasePinAPI.save_pinset_to_json(
                 pin_set=pin_set, bucket_name=bucket_name, filepath=filepath)
 
@@ -346,7 +351,7 @@ class FilebasePinAPI():
         pin_set: PinSetType = FilebasePinAPI.load_pinset_from_json(
             filepath, bucket_name)
         self.logger.debug(
-            "Loaded pin set from file with %d CIDs", pin_set['count'])
+            "Loaded pin set from file with %d CIDs. Last Date: %s", pin_set['count'], pin_set['last_date'])
         if pin_set["count"] == 0:
             # If it's the first time, we need to get proper values for the dates
             temp: GetPinsResponse = self.get_list(
