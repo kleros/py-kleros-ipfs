@@ -114,8 +114,8 @@ def main(local_node_pin_filepath: str, filebase_pins_filepath: str):
     logger.info("Backup started ----------------")
     logger.info("Updating local node pin ls")
     # recursive pins is enough to get all the pins
-    # RPC.pin_ls(filepath=local_node_pin_filepath,
-    #            pin_type=PinType.RECURSIVE)
+    RPC.pin_ls(filepath=local_node_pin_filepath,
+               pin_type=PinType.RECURSIVE)
 
     # update Filebase pinset
     logger.info("Updating Filebase pin ls")
