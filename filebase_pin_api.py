@@ -23,7 +23,7 @@ load_dotenv()
 
 # Define constants
 PIN_API_URL = "https://api.filebase.io/v1/ipfs/pins"
-DATE_STR_FORMAT_API = "%Y-%m-%dT%H:%M:%S.%f%z"
+DATE_STR_FORMAT_API = "%Y-%m-%dT%H:%M:%SZ"
 # Kleros IPFS addresses
 # TODO: Check if the addresses are still valid
 ORIGINS: List[str] = [
@@ -79,6 +79,33 @@ class FilebasePinAPI():
             raise ValueError(f"Token not defined for bucket {bucket_name}")
         return token
 
+    @staticmethod
+    def parse_api_date(date_str: str) -> datetime:
+        """
+        Parse a date string from the API or local JSON into a datetime object.
+        Tries multiple formats to ensure compatibility.
+        """
+        try:
+            # Try the current configured format
+            return datetime.strptime(date_str, DATE_STR_FORMAT_API).astimezone(timezone.utc)
+        except ValueError:
+            pass
+
+        try:
+            # Try standard ISO parsing (handles API responses like 2026-02-05T08:01:03.000-05:00)
+            return datetime.fromisoformat(date_str).astimezone(timezone.utc)
+        except ValueError:
+            pass
+            
+        try:
+            # Fallback for old legacy format with potential different timezone syntax
+            # Old format was "%Y-%m-%dT%H:%M:%S.%f%z"
+            # We try a few variations if needed, but usually fromisoformat covers it.
+            # This handles the +0000 without colon case if fromisoformat fails on older pythons (though 3.12 is fine)
+            return datetime.strptime(date_str, "%Y-%m-%dT%H:%M:%S.%f%z").astimezone(timezone.utc)
+        except ValueError:
+            raise ValueError(f"Could not parse date string: {date_str}")
+
     def _append_to_pinset(
         self,
         pin_set: PinSetType,
@@ -117,10 +144,8 @@ class FilebasePinAPI():
                                     for item in new_items["results"]]
             first_date_str: str = min(dates_str)
             last_date_str: str = max(dates_str)
-            last_date: datetime = datetime.strptime(
-                last_date_str, DATE_STR_FORMAT_API).astimezone(tz=timezone.utc)
-            first_date: datetime = datetime.strptime(
-                first_date_str, DATE_STR_FORMAT_API).astimezone(tz=timezone.utc)
+            last_date: datetime = FilebasePinAPI.parse_api_date(last_date_str)
+            first_date: datetime = FilebasePinAPI.parse_api_date(first_date_str)
             self.logger.debug("Dates from the API response: First date: %s, Last date: %s",
                               first_date, last_date)
             if last_date > old_last_date:
@@ -258,8 +283,8 @@ class FilebasePinAPI():
             pin_set: PinSetType = {
                 "cids": data[bucket_name]["cids"],
                 "count": data[bucket_name]["count"],
-                "last_date": datetime.strptime(data[bucket_name]["last_date"], DATE_STR_FORMAT_API),
-                "first_date": datetime.strptime(data[bucket_name]["first_date"], DATE_STR_FORMAT_API),
+                "last_date": FilebasePinAPI.parse_api_date(data[bucket_name]["last_date"]),
+                "first_date": FilebasePinAPI.parse_api_date(data[bucket_name]["first_date"]),
             }
         except (FileNotFoundError, json.JSONDecodeError, KeyError):
             pin_set: PinSetType = {
@@ -331,11 +356,9 @@ class FilebasePinAPI():
                 limit=1
             )
             date_str: str = temp["results"][0]["created"]
-            pin_set["first_date"] = datetime.strptime(
-                date_str, DATE_STR_FORMAT_API).astimezone(tz=timezone.utc)
+            pin_set["first_date"] = FilebasePinAPI.parse_api_date(date_str)
             # This -1 second is to guarantee that we are going to read the recovered file in the after loop
-            pin_set["last_date"] = datetime.strptime(
-                date_str, DATE_STR_FORMAT_API).astimezone(tz=timezone.utc) - timedelta(seconds=1)
+            pin_set["last_date"] = FilebasePinAPI.parse_api_date(date_str) - timedelta(seconds=1)
             self.logger.debug("Pinset dates updated to values: after: %s, before: %s",
                               pin_set["last_date"], pin_set["first_date"])
 
@@ -382,15 +405,20 @@ class FilebasePinAPI():
         _before = None
         _after = None
         if isinstance(after, datetime):
-            _after = after.strftime(DATE_STR_FORMAT_API)
+            _after = after.astimezone(timezone.utc).strftime(DATE_STR_FORMAT_API)
         if isinstance(before, datetime):
-            _before = before.strftime(DATE_STR_FORMAT_API)
+            _before = before.astimezone(timezone.utc).strftime(DATE_STR_FORMAT_API)
         params = {"status": status, "before": _before,
                   "after": _after, "limit": limit}
 
         res: requests.Response = requests.get(
             PIN_API_URL, headers=headers, params=params, timeout=10)
-        res_json: GetPinsResponse = res.json()
+        
+        try:
+            res_json: GetPinsResponse = res.json()
+        except requests.exceptions.JSONDecodeError:
+            self.logger.error("Failed to decode JSON. Response text: %s", res.text)
+            raise
         return res_json
 
     def get_file(self, bucket_name, cid) -> GetPinsResponse:
