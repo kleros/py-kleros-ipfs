@@ -141,7 +141,7 @@ if __name__ == "__main__":
             RPC.pin_add(cid=missed_cid, timeout=2)
             logger.info("%s added to local ipfs node", missed_cid)
         except ReadTimeout:
-            logger.info("Error while trying to pin, timeout error, most probably we don't have as peer filebase nodes. "
+            logger.warning("Error while trying to pin, timeout error, most probably we don't have as peer filebase nodes. "
                         "CID %s will be skipped", missed_cid)
         except Exception as e:
             logger.info("Unknown exception for cid %s", missed_cid)
