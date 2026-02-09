@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 from typing import Dict, List
 import logging
 
+import requests
 from requests.exceptions import ReadTimeout
 
 from filebase_datatypes import PinSetType
@@ -20,6 +21,7 @@ from logger import setup_logger
 
 load_dotenv()
 log_path: str = os.getenv('LOG_FILEPATH', '/var/log/py-kleros-ipfs')
+betterstack_heartbeat_url: str = os.getenv('BETTERSTACK_HEARTBEAT_URL', '')
 log_filepath: str = os.path.join(log_path, 'backup_filebase_locally.log')
 
 
@@ -152,6 +154,11 @@ if __name__ == "__main__":
     
     try:
         main(local_node_pin_filepath, filebase_pins_filepath)
+        if betterstack_heartbeat_url:
+            try:
+                requests.get(betterstack_heartbeat_url, timeout=10)
+            except Exception as heartbeat_err:
+                logger.error("Failed to send BetterStack heartbeat: %s", heartbeat_err)
     except Exception as e:
         logger.error("Error while running backup: %s", e)
         raise e
