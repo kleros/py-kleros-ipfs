@@ -153,7 +153,11 @@ if __name__ == "__main__":
     filebase_pins_filepath: str = './filebase_pins.json'
     
     try:
-        main(local_node_pin_filepath, filebase_pins_filepath)
+        try:
+            main(local_node_pin_filepath, filebase_pins_filepath)
+        except ReadTimeout as e:
+            logger.warning("Backup timed out, retrying once: %s", e)
+            main(local_node_pin_filepath, filebase_pins_filepath)
         if betterstack_heartbeat_url:
             try:
                 requests.get(betterstack_heartbeat_url, timeout=10)
