@@ -43,6 +43,29 @@ class PinLsResponse(TypedDict):
     Keys: dict[str, PinLsObject]
 
 
+class LsLink(TypedDict):
+    Hash: str
+    Name: str
+    Size: int
+    Type: int  # 1 = directory, 2 = file
+
+
+class LsObject(TypedDict):
+    Hash: str
+    Links: List[LsLink]
+
+
+class LsResponse(TypedDict):
+    Objects: List[LsObject]
+
+
+class PinRmResponse(TypedDict):
+    """
+    Response from the /pin/rm endpoint
+    """
+    Pins: List[str]
+
+
 class PinType(Enum):
     """
     Datatype for the filter of Pin Time when listing pins

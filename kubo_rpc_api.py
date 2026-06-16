@@ -7,7 +7,7 @@ import logging
 
 import requests
 
-from kubo_datatypes import IdResponse, PinAddResponse, PinLsResponse, PinType
+from kubo_datatypes import IdResponse, LsResponse, PinAddResponse, PinLsResponse, PinRmResponse, PinType
 from logger import setup_logger
 
 
@@ -44,7 +44,53 @@ class KuboRPC():
             self.logger.info("CID %s pinned successfully", cid)
         return res.json()
 
-    def cat(self, cid: str) -> requests.Response:
+    def is_pinned(self, cid: str, timeout: int = TIMEOUT) -> bool:
+        """
+        Check whether a CID is pinned on this node.
+        Uses pin/ls with a specific arg — returns False if the node responds
+        with 'not pinned' (HTTP 500), True otherwise.
+        https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-pin-ls
+        """
+        url: str = self.api_url + "/pin/ls"
+        res: requests.Response = requests.post(
+            url, params={"arg": cid, "type": "recursive"}, timeout=timeout
+        )
+        if res.ok:
+            return True
+        # Kubo returns 500 + "not pinned or pinned indirectly" when absent
+        if res.status_code == 500 and "not pinned" in res.text:
+            return False
+        # Unexpected error — re-raise so the caller knows something is wrong
+        res.raise_for_status()
+        return False  # unreachable, keeps mypy happy
+
+    def pin_rm(self, cid: str, timeout: int | None = None) -> PinRmResponse:
+        """
+        Remove a pinned object from local storage.
+        https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-pin-rm
+        """
+        url: str = self.api_url + "/pin/rm"
+        self.logger.debug("Unpinning CID %s", cid)
+        res: requests.Response = requests.post(
+            url, params={"arg": cid}, timeout=timeout)
+        if res.ok:
+            self.logger.info("CID %s unpinned successfully", cid)
+        else:
+            self.logger.error("Failed to unpin CID %s: %s", cid, res.text)
+        return res.json()
+
+    def ls(self, cid: str, timeout: int = TIMEOUT) -> LsResponse:
+        """
+        List directory contents of a CID.
+        https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-ls
+        """
+        url: str = self.api_url + "/ls"
+        res: requests.Response = requests.post(
+            url, params={"arg": cid}, timeout=timeout)
+        res.raise_for_status()
+        return res.json()
+
+    def cat(self, cid: str, timeout: int = TIMEOUT) -> requests.Response:
         """
         Show IPFS data from a CID
         https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-cat
@@ -56,7 +102,7 @@ class KuboRPC():
         return requests.post(url, params={
             "arg": cid,
             "progress": True
-        }, timeout=TIMEOUT)
+        }, timeout=timeout)
 
     def get(self, cid: str, filepath: str) -> requests.Response:
         """
