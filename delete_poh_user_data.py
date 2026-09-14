@@ -265,7 +265,9 @@ def delete_from_filebase(cids: dict[str, str]) -> int:
         logger.info(f'Processing bucket: {bucket_name}')
         for cid, label in cids.items():
             pin_info: GetPinsResponse = api.get_file(bucket_name, cid)
-            if not pin_info:
+            # An absent CID answers {"count": 0, "results": []}, which is truthy:
+            # only an empty `results` proves the CID is not in this bucket.
+            if not pin_info or not pin_info.get('results'):
                 logger.warning(
                     f'{label} CID {cid} not found in bucket {bucket_name}')
                 continue
