@@ -3,3 +3,6 @@ __pycache__/
 logs/
 *.json
 .env
+
+# AI local tools
+.atl
