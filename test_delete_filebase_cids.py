@@ -46,6 +46,18 @@ class ProcessItemTests(unittest.TestCase):
         self.assertIsNone(item["error"])
         self.api.delete_pin.assert_not_called()
 
+    def test_lookup_without_results_is_an_error_not_absent(self):
+        self.api.get_file.return_value = {"count": 0}
+
+        item = script.process_item(
+            self.api, "kleros", "QmOdd", dry_run=False,
+            max_rounds=5, round_delay=0, max_attempts=5, base_delay=0,
+            sleep_fn=_no_sleep)
+
+        self.assertFalse(item["verified_absent"])
+        self.assertIsNotNone(item["error"])
+        self.api.delete_pin.assert_not_called()
+
     def test_two_requestids_deleted_then_verified(self):
         first_lookup = {"count": 2, "results": [
             {"requestid": "req-1"}, {"requestid": "req-2"}]}

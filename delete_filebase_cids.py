@@ -101,7 +101,10 @@ def _find_pin_requests(
     response = call_with_retry(
         api.get_file, bucket, cid, statuses=ALL_STATUSES,
         max_attempts=max_attempts, base_delay=base_delay, sleep_fn=sleep_fn)
-    return response.get("results", [])
+    # A body without `results` proves nothing: never read it as "not pinned".
+    if "results" not in response:
+        raise requests.RequestException(f"Filebase answered without results: {response}")
+    return response["results"]
 
 
 def _delete_and_check(api: FilebasePinAPI, bucket: str, requestid: str) -> None:
