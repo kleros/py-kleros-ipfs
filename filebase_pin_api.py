@@ -426,22 +426,35 @@ class FilebasePinAPI():
             raise
         return res_json
 
-    def get_file(self, bucket_name, cid) -> GetPinsResponse:
+    def get_file(self, bucket_name, cid, statuses: Optional[List[PinStatus]] = None) -> GetPinsResponse:
         """
         Get information about a specific CID from a bucket.
 
         Args:
             bucket_name (str): Name of the bucket.
             cid (str): The CID to query.
+            statuses (List[PinStatus], optional): Pin statuses to filter by. When given,
+                sent as a comma-separated `status` filter with `limit=1000` so every
+                matching pin request is returned. Defaults to the API's own default
+                filter (pinned only).
 
         Returns:
             dict: Response JSON containing file information.
+
+        Raises:
+            requests.HTTPError: If the API answers with a 4xx/5xx status. A JSON error
+                body (e.g. rate limit or auth failure) must never be mistaken for
+                "CID not found".
         """
         token: str = self.get_token(bucket_name)
         headers = {"Authorization": f"Bearer {token}"}
-        params = {"cid": cid}
+        params: dict = {"cid": cid}
+        if statuses is not None:
+            params["status"] = ",".join(status.value for status in statuses)
+            params["limit"] = 1000
         res = requests.get(PIN_API_URL, headers=headers,
                            params=params, timeout=10)
+        res.raise_for_status()
         res_json = res.json()
         return res_json
 

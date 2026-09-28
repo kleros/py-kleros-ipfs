@@ -264,7 +264,14 @@ def delete_from_filebase(cids: dict[str, str]) -> int:
     for bucket_name in BUCKET_NAMES:
         logger.info(f'Processing bucket: {bucket_name}')
         for cid, label in cids.items():
-            pin_info: GetPinsResponse = api.get_file(bucket_name, cid)
+            try:
+                pin_info: GetPinsResponse = api.get_file(bucket_name, cid)
+            except requests.RequestException as error:
+                failures += 1
+                logger.error(
+                    f'Lookup of {label} CID {cid} in bucket {bucket_name} failed: {error}')
+                continue
+
             # An absent CID answers {"count": 0, "results": []}, which is truthy:
             # only an empty `results` proves the CID is not in this bucket.
             if not pin_info or not pin_info.get('results'):
@@ -273,8 +280,14 @@ def delete_from_filebase(cids: dict[str, str]) -> int:
                 continue
 
             request_id: str = pin_info['results'][0]['requestid']
-            response: requests.Response = api.delete_pin(
-                bucket_name, request_id)
+            try:
+                response: requests.Response = api.delete_pin(
+                    bucket_name, request_id)
+            except requests.RequestException as error:
+                failures += 1
+                logger.error(
+                    f'Deletion of {label} CID {cid} from {bucket_name} failed: {error}')
+                continue
             if not response.ok:
                 failures += 1
             logger.info(
